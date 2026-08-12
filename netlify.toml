@@ -1,0 +1,6 @@
+[build]
+  publish = "adsparks"
+
+[build.environment]
+  GROQ_API_KEY = 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
+  
