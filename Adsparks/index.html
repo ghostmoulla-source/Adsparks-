@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdSparks AI - Local Ad Writer</title>
+    <script src="https://tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center p-4">
+    <div class="w-full max-w-md bg-gray-800 p-6 rounded-2xl shadow-xl mt-8">
+        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 text-center mb-2">AdSparks AI</h1>
+        <p class="text-gray-400 text-sm text-center mb-6">High-converting ads for local businesses in seconds.</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold mb-1 text-gray-300">Business Type</label>
+                <input id="businessType" type="text" placeholder="e.g., Plumber, Bakery, Gym" class="w-full bg-gray-700 text-white rounded-lg p-3 outline-none border border-gray-600 focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-1 text-gray-300">City / Location</label>
+                <input id="location" type="text" placeholder="e.g., Chicago, Paris" class="w-full bg-gray-700 text-white rounded-lg p-3 outline-none border border-gray-600 focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-1 text-gray-300">Platform</label>
+                <select id="platform" class="w-full bg-gray-700 text-white rounded-lg p-3 outline-none border border-gray-600 focus:border-orange-500">
+                    <option value="Facebook">Facebook Ads</option>
+                    <option value="Google">Google Ads</option>
+                </select>
+            </div>
+            <button id="generateBtn" onclick="generateAds()" class="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 rounded-lg transition duration-200 mt-2 shadow-md">Generate Ad Scripts</button>
+        </div>
+
+        <div id="loading" class="hidden text-center text-orange-400 font-medium my-6 animate-pulse">Writing your ads...</div>
+
+        <div id="results" class="hidden mt-6 space-y-4 border-t border-gray-700 pt-6">
+            <h2 class="text-xl font-bold text-orange-400 mb-2">Your Ad Variations:</h2>
+            <div id="adOutput" class="whitespace-pre-wrap bg-gray-700 p-4 rounded-lg text-sm text-gray-200 leading-relaxed max-h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        async function generateAds() {
+            const business = document.getElementById('businessType').value;
+            const location = document.getElementById('location').value;
+            const platform = document.getElementById('platform').value;
+            if(!business || !location) return alert('Please fill in all fields');
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+
+            try {
+                const response = await fetch('/.netlify/functions/generate-ads', {
+                    method: 'POST',
+                    body: JSON.stringify({ business, location, platform })
+                });
+                const data = await response.json();
+                document.getElementById('adOutput').innerText = data.text;
+                document.getElementById('results').classList.remove('hidden');
+            } catch (err) {
+                alert('An error occurred. Check your setup.');
+            }
+            document.getElementById('loading').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
