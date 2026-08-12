@@ -1,0 +1,9 @@
+{
+  "name": "adsparks-ai",
+  "version": "1.0.0",
+  "description": "High-converting ads for local businesses in seconds",
+  "main": "index.js",
+  "dependencies": {
+    "groq-sdk": "^0.3.3"
+  }
+}
