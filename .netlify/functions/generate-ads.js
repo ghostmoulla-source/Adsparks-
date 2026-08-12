@@ -25,9 +25,9 @@ const handler = async (event) => {
       };
     }
 
-    const prompt = `You are an expert ad copywriter. Create 3 high-converting ad variations for a ${business} business located in ${location} for ${platform}. Each ad should be catchy, professional, and optimized for the platform.`;
+    const prompt = `You are an expert ad copywriter. Create 3 high-converting ad variations for a ${business} business located in ${location} for ${platform}. Each ad should be catchy, professional, and optimized for the platform. Format each on a new line starting with "Ad 1:", "Ad 2:", "Ad 3:"`;
 
-    console.log("Calling GROQ API with prompt:", prompt);
+    console.log("Calling GROQ API");
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -48,20 +48,20 @@ const handler = async (event) => {
       }),
     });
 
-    console.log("GROQ API Response status:", response.status);
+    console.log("Response status:", response.status);
+
+    const responseText = await response.text();
+    console.log("Response text:", responseText);
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("GROQ API Error Response:", errorData);
+      console.error("Error response:", responseText);
       return {
         statusCode: response.status,
-        body: JSON.stringify({ error: `GROQ API failed: ${response.status} - ${errorData}` }),
+        body: JSON.stringify({ error: `API Error: ${response.status}` }),
       };
     }
 
-    const data = await response.json();
-    console.log("GROQ API Success:", data);
-    
+    const data = JSON.parse(responseText);
     const text = data.choices?.[0]?.message?.content || "No ads generated";
 
     return {
@@ -72,10 +72,10 @@ const handler = async (event) => {
       body: JSON.stringify({ text }),
     };
   } catch (error) {
-    console.error("Function Error:", error.message, error);
+    console.error("Error:", error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: `Function error: ${error.message}` }),
+      body: JSON.stringify({ error: error.message }),
     };
   }
 };
