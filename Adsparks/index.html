@@ -27,7 +27,7 @@
                     <option value="Google">Google Ads</option>
                 </select>
             </div>
-            <button id="generateBtn" onclick="generateAds()" class="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 rounded-lg transition duration-200 mt-2 shadow-md">Generate Ad Scripts</button>
+            <button id="generateBtn" onclick="generateAds()" class="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 rounded-lg transition">Generate Ad Scripts</button>
         </div>
 
         <div id="loading" class="hidden text-center text-orange-400 font-medium my-6 animate-pulse">Writing your ads...</div>
@@ -51,13 +51,29 @@
             try {
                 const response = await fetch('/.netlify/functions/generate-ads', {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ business, location, platform })
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
-                document.getElementById('adOutput').innerText = data.text;
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
+                }
+                
+                document.getElementById('adOutput').innerText = data.text || 'No ads generated';
                 document.getElementById('results').classList.remove('hidden');
             } catch (err) {
-                alert('An error occurred. Check your setup.');
+                console.error('Error:', err);
+                alert('An error occurred. Check your setup. Error: ' + err.message);
             }
             document.getElementById('loading').classList.add('hidden');
         }
