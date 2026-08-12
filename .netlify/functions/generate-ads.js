@@ -1,5 +1,3 @@
-const Groq = require("groq-sdk");
-
 const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return {
@@ -26,21 +24,37 @@ const handler = async (event) => {
       };
     }
 
-    const groq = new Groq({ apiKey: groqApiKey });
+    const prompt = `You are an expert ad copywriter. Create 3 high-converting ad variations for a ${business} business located in ${location} for ${platform}. Each ad should be catchy, professional, and optimized for the platform. Format: Ad 1: [text] Ad 2: [text] Ad 3: [text]`;
 
-    const message = await groq.messages.create({
-      model: "mixtral-8x7b-32768",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: `You are an expert ad copywriter. Create 3 high-converting ad variations for a ${business} business located in ${location} for ${platform}. Each ad should be catchy, professional, and optimized for the platform. Format: Ad 1: [text] Ad 2: [text] Ad 3: [text]`,
-        },
-      ],
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${groqApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "mixtral-8x7b-32768",
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        max_tokens: 1024,
+      }),
     });
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("GROQ API Error:", errorData);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Failed to call GROQ API" }),
+      };
+    }
+
+    const data = await response.json();
+    const text = data.choices[0]?.message?.content || "No ads generated";
 
     return {
       statusCode: 200,
