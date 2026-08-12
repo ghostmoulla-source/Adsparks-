@@ -1,3 +1,5 @@
+const https = require('https');
+
 const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return {
@@ -24,49 +26,80 @@ const handler = async (event) => {
       };
     }
 
-    const prompt = `You are an expert ad copywriter. Create 3 high-converting ad variations for a ${business} business located in ${location} for ${platform}. Each ad should be catchy, professional, and optimized for the platform. Format: Ad 1: [text] Ad 2: [text] Ad 3: [text]`;
+    const prompt = `Create 3 short, catchy ad variations for a ${business} in ${location} for ${platform}. Keep each ad under 100 characters.`;
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${groqApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 1024,
-        temperature: 0.7,
-      }),
+    const requestBody = JSON.stringify({
+      model: "mixtral-8x7b-32768",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 256,
+      temperature: 0.7,
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: data.error?.message || "GROQ API Error" }),
+    return new Promise((resolve) => {
+      const options = {
+        hostname: 'api.groq.com',
+        path: '/openai/v1/chat/completions',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(requestBody),
+        },
       };
-    }
 
-    const text = data.choices?.[0]?.message?.content || "No ads generated";
+      const req = https.request(options, (res) => {
+        let data = '';
 
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    };
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            
+            if (res.statusCode !== 200) {
+              resolve({
+                statusCode: res.statusCode,
+                body: JSON.stringify({ error: parsed.error?.message || 'API Error' }),
+              });
+              return;
+            }
+
+            const text = parsed.choices?.[0]?.message?.content || 'No ads generated';
+            resolve({
+              statusCode: 200,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text }),
+            });
+          } catch (e) {
+            resolve({
+              statusCode: 500,
+              body: JSON.stringify({ error: 'Parse error: ' + e.message }),
+            });
+          }
+        });
+      });
+
+      req.on('error', (e) => {
+        resolve({
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Request error: ' + e.message }),
+        });
+      });
+
+      req.write(requestBody);
+      req.end();
+    });
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: 'Server error: ' + error.message }),
     };
   }
 };
