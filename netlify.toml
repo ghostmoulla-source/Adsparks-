@@ -1,5 +1,6 @@
 [build]
   publish = "Adsparks"
+  functions = ".netlify/functions"
 
 [build.environment]
   GROQ_API_KEY = "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"
